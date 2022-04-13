@@ -357,10 +357,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
 		{
-			"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
-		}, // (1行で書いたほうが見やすい)
+			"POSITION",									// セマンティック名
+			0,											// 同じセマンティック名が複数あるときに使うインデックス (0でおっけー)
+			DXGI_FORMAT_R32G32B32_FLOAT,				// 要素数とビット数を表す (XYZの3つでfloat型なのでR32G32B32_FLOAT)
+			0,											// 入力スロットインデックス (0でおっけー)
+			D3D12_APPEND_ALIGNED_ELEMENT,				// データのオフセット値 (D3D12_APPEND_ALIGNED_ELEMENTだと自動設定
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 入力データ種別 (標準はD3D12_INPUT_CLASSIFICATION_PER_VERTEX_DAT)
+			0											// 一度に描画するインスタンス数 (0でおっけー)
+		}, // 座標以外に色、テクスチャUVなどを渡す場合は更に続ける。
 	};
 
 	// グラフィックスパイプライン設定

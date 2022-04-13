@@ -20,7 +20,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="BasicVS.hlsl" />
-    <FxCompile Include="BasicPS.hlsl" />
+    <FxCompile Include="BasicVS.hlsl">
+      <Filter>ソース ファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="BasicPS.hlsl">
+      <Filter>ソース ファイル</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
