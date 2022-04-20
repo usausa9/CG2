@@ -24,16 +24,17 @@ void DirectXInput::InputInit(HRESULT result, WNDCLASSEX w, HWND hwnd )
 		w.hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8,
 		(void**)&directInput, nullptr);
 	assert(SUCCEEDED(result));
+
 	// キーボードデバイスの生成
 	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
 	assert(SUCCEEDED(result));
+
 	// 入力データ形式のセット
 	result = keyboard->SetDataFormat(&c_dfDIKeyboard); // 標準形式
 	assert(SUCCEEDED(result));
 
 	// 排他制御レベルのセット
-	result = keyboard->SetCooperativeLevel(
-		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+	result = keyboard->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
 	assert(SUCCEEDED(result));
 }
 
@@ -51,7 +52,6 @@ void DirectXInput::InputUpdate()
 	// キーボード情報の取得開始
 	keyboard->Acquire();
 	keyboard->GetDeviceState(sizeof(keys), keys);
-
 }
 
 //押しっぱなし
