@@ -40,9 +40,6 @@ void DirectXInput::InputInit(HRESULT result, WNDCLASSEX w, HWND hwnd )
 
 void DirectXInput::InputUpdate()
 {
-	// 全キーの1F前の入力状態を取得する
-	keyboard->GetDeviceState(sizeof(prev), prev);
-
 	// 前後更新
 	for (int i = 0; i < 256; ++i)
 	{
