@@ -46,7 +46,7 @@ struct ConstBufferDataMaterial
 // Windowsアプリでのエントリーポイント (main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	#pragma region WindowsAPI初期化
+#pragma region WindowsAPI初期化
 	// ウィンドウサイズ
 	const int window_width = 1280;
 	const int window_height = 720;
@@ -89,8 +89,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	MSG msg{}; // メッセージ
 
 #pragma endregion
-	#pragma region DirectX初期化処理
-	// DirectX初期化処理 ここから
+#pragma region DirectX初期化処理
+// DirectX初期化処理 ここから
 
 #ifdef _DEBUG
 //デバッグレイヤーをオンに
@@ -121,15 +121,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	// パフォーマンスが高いものから順に、全てのアダプターを列挙する
 	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference
-	(i,DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,IID_PPV_ARGS(&tmpAdapter)) != DXGI_ERROR_NOT_FOUND;
-		i++) 
+	(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&tmpAdapter)) != DXGI_ERROR_NOT_FOUND;
+		i++)
 	{
 		// 動的配列に追加する
 		adapters.push_back(tmpAdapter);
 	}
 
 	// 妥当なアダプタを選別する
-	for (size_t i = 0; i < adapters.size(); i++) 
+	for (size_t i = 0; i < adapters.size(); i++)
 	{
 		DXGI_ADAPTER_DESC3 adapterDesc;
 
@@ -137,7 +137,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		adapters[i]->GetDesc3(&adapterDesc);
 
 		// ソフトウェアデバイスを回避
-		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) 
+		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
 		{
 			// デバイスを採用してループを抜ける
 			tmpAdapter = adapters[i];
@@ -146,7 +146,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 
 	// 対応レベルの配列
-	D3D_FEATURE_LEVEL levels[] = 
+	D3D_FEATURE_LEVEL levels[] =
 	{
 		D3D_FEATURE_LEVEL_12_1,
 		D3D_FEATURE_LEVEL_12_0,
@@ -155,13 +155,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	};
 
 	D3D_FEATURE_LEVEL featureLevel;
-	for (size_t i = 0; i < _countof(levels); i++) 
+	for (size_t i = 0; i < _countof(levels); i++)
 	{
 		// 採用したアダプターでデバイスを生成
 		result = D3D12CreateDevice(tmpAdapter, levels[i],
 			IID_PPV_ARGS(&device));
 
-		if (result == S_OK) 
+		if (result == S_OK)
 		{
 			// デバイスを生成できた時点でループを抜ける
 			featureLevel = levels[i];
@@ -219,7 +219,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	backBuffers.resize(swapChainDesc.BufferCount);
 
 	// スワップチェーンの全てのバッファについて処理する
-	for (size_t i = 0; i < backBuffers.size(); i++) 
+	for (size_t i = 0; i < backBuffers.size(); i++)
 	{
 		// スワップチェーンからバッファを取得
 		swapChain->GetBuffer((UINT)i, IID_PPV_ARGS(&backBuffers[i]));
@@ -252,9 +252,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	DirectXInput::InputInit(result, w, hwnd); // ★Inputクラス :: イニシャライズ
 
 #pragma endregion
-	#pragma region 描画初期化処理
+#pragma region 描画初期化処理
 
-	// ヒープ設定
+// ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
 	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD; // GPUの転送用
 
@@ -295,11 +295,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	// 全てのシェーダから見える
 
 	// 頂点データ
-	XMFLOAT3 vertices[] = 
+	XMFLOAT3 vertices[] =
 	{
 	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ -0.5f, +0.5f, 0.0f }, // 左上
 	{ +0.5f, -0.5f, 0.0f }, // 右下
+	{ -0.5f, +0.0f, 0.0f }, // 左中
+	{ +0.5f, -0.0f, 0.0f }, // 右中
+	{ -0.5f, +0.5f, 0.0f }, // 左上
+	{ +0.5f, +0.5f, 0.0f }, // 右上
 	};
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
@@ -336,7 +339,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 	// 全頂点に対して
-	for (int i = 0; i < _countof(vertices); i++) 
+	for (int i = 0; i < _countof(vertices); i++)
 	{
 		vertMap[i] = vertices[i]; // 座標をコピー
 	}
@@ -370,7 +373,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		&vsBlob, &errorBlob);
 
 	// エラーなら
-	if (FAILED(result)) 
+	if (FAILED(result))
 	{
 		// errorBlobからエラー内容をstring型にコピー
 		std::string error;
@@ -395,7 +398,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		&psBlob, &errorBlob);
 
 	// エラーなら
-	if (FAILED(result)) 
+	if (FAILED(result))
 	{
 		// errorBlobからエラー内容をstring型にコピー
 		std::string error;
@@ -509,12 +512,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(result));
 
-	#pragma endregion
+#pragma endregion
 
 	// ゲームループ
 	while (true)
 	{
-		#pragma region ウィンドウメッセージ処理
+#pragma region ウィンドウメッセージ処理
 		// メッセージがある？
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
@@ -528,7 +531,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			break;
 		}
 #pragma endregion
-		#pragma region DirectX毎フレーム処理
+#pragma region DirectX毎フレーム処理
 		// DIrectX毎フレーム処理 ここから
 
 		DirectXInput::InputUpdate(); // ★Inputクラス :: アップデート
@@ -560,9 +563,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 #pragma endregion 
-		#pragma region グラフィックスコマンド
+#pragma region グラフィックスコマンド
 		// 4.描画コマンドここから
-		
+
 		// ビューポート設定コマンド
 		D3D12_VIEWPORT viewport{};
 		viewport.Width = window_width;
@@ -590,7 +593,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		// プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
+		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);	 // 点のリスト
+		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);		 // 線のリスト
+		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);	 // 線のストリップ
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	 // 三角形のリスト
+		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 三角形のストリップ
 
 		// 頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
@@ -615,8 +622,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// コマンドリストの実行
 		ID3D12CommandList* commandLists[] = { commandList };
 		commandQueue->ExecuteCommandLists(1, commandLists);
-		#pragma endregion
-		#pragma region 画面入れ替え
+#pragma endregion
+#pragma region 画面入れ替え
 		// 画面に表示するバッファをフリップ(裏表の入替え)
 		result = swapChain->Present(1, 0);
 		assert(SUCCEEDED(result));
