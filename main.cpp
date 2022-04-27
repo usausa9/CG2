@@ -293,21 +293,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	rootParam.Descriptor.ShaderRegister = 0;					// 定数バッファの番号
 	rootParam.Descriptor.RegisterSpace = 0;						// デフォルト値
 	rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;	// 全てのシェーダから見える
-	
+
 #pragma region 頂点バッファ
-	// 頂点データ
-	XMFLOAT3 vertices[] =
+
+	// 頂点データ構造体
+	struct Vertex
 	{
-	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ +0.5f, -0.5f, 0.0f }, // 右下
-	{ -0.5f, +0.0f, 0.0f }, // 左中
-	{ +0.5f, -0.0f, 0.0f }, // 右中
-	{ -0.5f, +0.5f, 0.0f }, // 左上
-	{ +0.5f, +0.5f, 0.0f }, // 右上
+		XMFLOAT3 pos; // xyz座標
+		XMFLOAT2 uv;  // uv座標
+	};
+
+	// 頂点データ
+	Vertex vertices[] =
+	{
+		{{ -0.4f, -0.7f, 0.0f }, {0.0f, 1.0f}},	// 左下
+		{{ -0.4f, +0.7f, 0.0f }, {0.0f, 0.0f}},	// 左上
+		{{ +0.4f, -0.7f, 0.0f }, {1.0f, 1.0f}},	// 右下
+		{{ +0.4f, +0.7f, 0.0f }, {1.0f, 0.0f}},	// 右上
 	};
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
-	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
+	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
 
 	// 頂点バッファの設定
 	D3D12_HEAP_PROPERTIES heapProp{}; // ヒープ設定
@@ -335,7 +341,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 	// GPU上のバッファに対応した仮想メモリ(メインメモリ上)を取得
-	XMFLOAT3* vertMap = nullptr;
+	Vertex* vertMap = nullptr;
 	result = vertBuff->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(result));
 
@@ -358,16 +364,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vbView.SizeInBytes = sizeVB;
 
 	// 頂点1つ分のデータサイズ
-	vbView.StrideInBytes = sizeof(XMFLOAT3);
+	vbView.StrideInBytes = sizeof(vertices[0]);
 
 #pragma endregion
 
 #pragma region インデックスバッファ
 	// インデックスデータ
-	uint16_t indices[] =
+	unsigned short indices[] =
 	{
 		0,1,2, // 三角形1つ目
-		1,2,3, // 三角形2つ目
+		1,2,3  // 三角形2つ目
 	};
 
 	// インデックスデータ全体のサイズ
@@ -469,10 +475,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 頂点レイアウト
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
-		{
+		{ // xyz座標
 			"POSITION",									// セマンティック名
 			0,											// 同じセマンティック名が複数あるときに使うインデックス (0でおっけー)
 			DXGI_FORMAT_R32G32B32_FLOAT,				// 要素数とビット数を表す (XYZの3つでfloat型なのでR32G32B32_FLOAT)
+			0,											// 入力スロットインデックス (0でおっけー)
+			D3D12_APPEND_ALIGNED_ELEMENT,				// データのオフセット値 (D3D12_APPEND_ALIGNED_ELEMENTだと自動設定
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 入力データ種別 (標準はD3D12_INPUT_CLASSIFICATION_PER_VERTEX_DAT)
+			0											// 一度に描画するインスタンス数 (0でおっけー)
+		}, // 座標以外に色、テクスチャUVなどを渡す場合は更に続ける。
+
+		{ // uv座標
+			"TEXCOORD",									// セマンティック名
+			0,											// 同じセマンティック名が複数あるときに使うインデックス (0でおっけー)
+			DXGI_FORMAT_R32G32_FLOAT,				    // 要素数とビット数を表す (uvの2つでfloat型なのでR32G32_FLOAT)
 			0,											// 入力スロットインデックス (0でおっけー)
 			D3D12_APPEND_ALIGNED_ELEMENT,				// データのオフセット値 (D3D12_APPEND_ALIGNED_ELEMENTだと自動設定
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, // 入力データ種別 (標準はD3D12_INPUT_CLASSIFICATION_PER_VERTEX_DAT)
@@ -663,7 +679,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->IASetIndexBuffer(&ibView);
 
 		// 描画コマンド
-		commandList->DrawIndexedInstanced(_countof(vertices), 1, 0, 0 ,0); // 全ての頂点を使って描画
+		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
 
 		// 4.描画コマンドここまで
 
