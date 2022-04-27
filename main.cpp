@@ -523,7 +523,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 	}
 	
-
 	//// Œ³ƒf[ƒ^‰ğ•ú
 	//delete[] "Resoources/texture.png";
 
