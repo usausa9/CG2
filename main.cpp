@@ -343,8 +343,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		0.1f, 1000.0f
 	);
 
-	// 定数バッファに転送
-	constMapTransform->mat = matProjection;
+	// ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3 eye(0, 0, -100);	// 視点座標
+	XMFLOAT3 target(0, 0, 0);	// 注視点座標
+	XMFLOAT3 up(0, 1, 0);		// 上方向ベクトル
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+
+	
 
 	// デスクリプタレンジの設定
 	D3D12_DESCRIPTOR_RANGE descriptorRange{};
@@ -447,11 +453,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 頂点データ
 	Vertex vertices[] =
 	{
-		{{-50.0f,-50.0f, 50.0f }, {0.0f, 1.0f}},	// 左下
-		{{-50.0f, 50.0f, 50.0f }, {0.0f, 0.0f}},	// 左上
-		{{ 50.0f,-50.0f, 50.0f }, {1.0f, 1.0f}},	// 右下
-		{{ 50.0f, 50.0f, 50.0f }, {1.0f, 0.0f}},	// 右上
+		{{-50.0f,-50.0f, 0.0f }, {0.0f, 1.0f}},	// 左下
+		{{-50.0f, 50.0f, 0.0f }, {0.0f, 0.0f}},	// 左上
+		{{ 50.0f,-50.0f, 0.0f }, {1.0f, 1.0f}},	// 右下
+		{{ 50.0f, 50.0f, 0.0f }, {1.0f, 0.0f}},	// 右上
 	};
+
+	// 5-4
+	//float angle = 0.0f; // カメラの回転角
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(vertices[0]) * _countof(vertices));
@@ -850,6 +859,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #pragma endregion 
 #pragma region グラフィックスコマンド
+
+		
+		// 5-3 kaitenn
+		//if (DirectXInput::IsKeyDown(DIK_D) || DirectXInput::IsKeyDown(DIK_A))
+		//{
+		//	if (DirectXInput::IsKeyDown(DIK_D)) { angle += XMConvertToRadians(10.0f); }
+		//	else if (DirectXInput::IsKeyDown(DIK_A)) { angle -= XMConvertToRadians(10.0f); }
+
+		//	// angleラジアンだけY軸周りに回転。 半径は -100
+		//	eye.x = -100 * sinf(angle);
+		//	eye.z = -100 * cosf(angle);
+
+		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		//}
+
+		// 定数バッファに転送
+		constMapTransform->mat = matView * matProjection;	// 行列の合成
+
 		// 4.描画コマンドここから
 
 		// ビューポート設定コマンド
