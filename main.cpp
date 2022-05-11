@@ -325,13 +325,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		assert(SUCCEEDED(result));
 	}
 
-	// 単位行列を代入
-	constMapTransform->mat = XMMatrixIdentity();
+	//// 単位行列を代入
+	//constMapTransform->mat = XMMatrixIdentity();
 
-	constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
-	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_height;
-	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
-	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+	//constMapTransform->mat.r[0].m128_f32[0] = 2.0f / window_width;
+	//constMapTransform->mat.r[1].m128_f32[1] = -2.0f / window_height;
+	//constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
+	//constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
+
+	constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);
+
+	// 透視投影変換行列の計算
+	XMMATRIX matProjection =
+	XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),	// 上下画角45度
+		(float)window_width / window_height,
+		0.1f, 1000.0f
+	);
+
+	// 定数バッファに転送
+	constMapTransform->mat = matProjection;
 
 	// デスクリプタレンジの設定
 	D3D12_DESCRIPTOR_RANGE descriptorRange{};
@@ -385,8 +398,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//	imageData[i].w = 1.0f;
 	//}
 
-
-
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
@@ -436,10 +447,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 頂点データ
 	Vertex vertices[] =
 	{
-		{{ 0.0f, 100.0f, 0.0f }, {0.0f, 1.0f}},	// 左下
-		{{ 0.0f, 0.0f, 0.0f }, {0.0f, 0.0f}},	// 左上
-		{{ 100.0f, 100.0f, 0.0f }, {1.0f, 1.0f}},	// 右下
-		{{ 100.0f, 0.0f, 0.0f }, {1.0f, 0.0f}},	// 右上
+		{{-50.0f,-50.0f, 50.0f }, {0.0f, 1.0f}},	// 左下
+		{{-50.0f, 50.0f, 50.0f }, {0.0f, 0.0f}},	// 左上
+		{{ 50.0f,-50.0f, 50.0f }, {1.0f, 1.0f}},	// 右下
+		{{ 50.0f, 50.0f, 50.0f }, {1.0f, 0.0f}},	// 右上
 	};
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
