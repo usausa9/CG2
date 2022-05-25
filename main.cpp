@@ -2,7 +2,6 @@
 
 #include "DirectXInput.h" // クラス化済
 
-
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -939,7 +938,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #pragma endregion 
 #pragma region グラフィックスコマンド
-
 
 		// 4.描画コマンドここから
 
