@@ -52,19 +52,19 @@ void DirectXInput::InputUpdate()
 }
 
 //‰Ÿ‚µ‚Á‚Ï‚È‚µ
-bool DirectXInput::IsKeyDown(char key)
+bool DirectXInput::IsKeyDown(UINT8 key)
 {
 	return keys[key];
 }
 
 //‰Ÿ‚µ‚½uŠÔ
-bool DirectXInput::IsKeyTrigger(char key)
+bool DirectXInput::IsKeyTrigger(UINT8 key)
 {
 	return keys[key] && !prev[key];
 }
 
 //—£‚µ‚½uŠÔ
-bool DirectXInput::GetKeyReleased(char key)
+bool DirectXInput::GetKeyReleased(UINT8 key)
 {
 	return !keys[key] && !prev[key];
 }

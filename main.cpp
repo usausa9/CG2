@@ -257,7 +257,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// DirectX初期化処理 ここまで
 
 	// DirectInputの初期化
-	DirectXInput::InputInit(result, w, hwnd); // ★Inputクラス :: イニシャライズ
+	DirectXInput _key;
+	_key.InputInit(result, w, hwnd); // ★Inputクラス :: イニシャライズ
 
 #pragma endregion
 #pragma region 描画初期化処理
@@ -350,7 +351,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	XMFLOAT3 up(0, 1, 0);		// 上方向ベクトル
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-	
+	// スケーリング倍率 初期化
+	XMFLOAT3 scale = { 1.0f,1.0f,1.0f };
+	// 回転角 初期化
+	XMFLOAT3 rotation = { 0.0f,0.0f,0.0f };
+	// 座標 初期化
+	XMFLOAT3 position = { 0.0f,0.0f,0.0f };
 
 	// デスクリプタレンジの設定
 	D3D12_DESCRIPTOR_RANGE descriptorRange{};
@@ -827,9 +833,83 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 #pragma endregion
 #pragma region DirectX毎フレーム処理
-		// DIrectX毎フレーム処理 ここから
+		// DIrectX毎フレーム処理(更新処理) ここから
 
-		DirectXInput::InputUpdate(); // ★Inputクラス :: アップデート
+		_key.InputUpdate(); // ★Inputクラス :: アップデート
+
+			// いずれかのキーを押していたら
+		if (_key.IsKeyDown(DIK_UP) || _key.IsKeyDown(DIK_DOWN) ||
+			_key.IsKeyDown(DIK_RIGHT) || _key.IsKeyDown(DIK_LEFT))
+		{
+			// 座標を移動する処理 (Z座標)
+			if (_key.IsKeyDown(DIK_UP)) { position.z += 1.0f; }
+			else if (_key.IsKeyDown(DIK_DOWN)) { position.z -= 1.0f; }
+			if (_key.IsKeyDown(DIK_RIGHT)) { position.x += 1.0f; }
+			else if (_key.IsKeyDown(DIK_LEFT)) { position.x -= 1.0f; }
+		}
+
+#pragma region ビュー行列の計算
+	// 5-3 kaitenn
+	//if (_key.IsKeyDown(DIK_D) || _key.IsKeyDown(DIK_A))
+	//{
+	//	if (_key.IsKeyDown(DIK_D)) { angle += XMConvertToRadians(10.0f); }
+	//	else if (_key.IsKeyDown(DIK_A)) { angle -= XMConvertToRadians(10.0f); }
+
+	//	// angleラジアンだけY軸周りに回転。 半径は -100
+	//	eye.x = -100 * sinf(angle);
+	//	eye.z = -100 * cosf(angle);
+
+	//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+	//}
+#pragma endregion
+
+#pragma region ワールド行列の計算
+
+		// ワールド変換行列
+		XMMATRIX matWorld;
+
+#pragma region スケーリング処理 
+		
+		XMMATRIX matScale;	// スケーリング行列
+
+		// ---------------------変更箇所---------------------
+		matScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+		// ---------------------変更箇所---------------------
+
+#pragma endregion 
+#pragma region 回転処理
+
+		XMMATRIX matRot;	// 回転行列
+		matRot = XMMatrixIdentity(); //単位行列を代入
+
+		// ---------------------変更箇所---------------------
+		//matRot *= XMMatrixRotationZ(XMConvertToRadians(45.0f));	// Z軸周りに45度回転
+
+		matRot *= XMMatrixRotationZ(rotation.z);	// Z軸周りに回転してから
+		matRot *= XMMatrixRotationX(rotation.x);	// X軸周りに回転してから
+		matRot *= XMMatrixRotationY(rotation.y);	// Y軸周りに回転
+		// ---------------------変更箇所---------------------
+	
+#pragma endregion
+#pragma region 平行移動処理
+
+		XMMATRIX matTrans;		// 平行移動行列
+
+		// ---------------------変更箇所---------------------
+		//matTrans = XMMatrixTranslation(-50.0f, 0, 0);	// Xにマイナス50移動
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);	//(連続移動)
+		// ---------------------変更箇所---------------------
+
+#pragma endregion
+
+		matWorld = XMMatrixIdentity();
+		matWorld *= matScale;	// ワールド行列にスケーリングを反映(乗算)
+		matWorld *= matRot;	// ワールド行列に回転を反映(乗算)
+		matWorld *= matTrans;	// ワールド行列に平行移動を反映
+
+		// 3つの処理の最後に定数バッファに転送
+		constMapTransform->mat = matWorld * matView * matProjection;	// 行列の合成
+#pragma endregion 
 
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
@@ -850,7 +930,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// 3.画面クリア R G B A
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f }; // 青っぽい色
 
-		/*if (DirectXInput::IsKeyDown(DIK_7))
+		/*if (_key.IsKeyDown(DIK_7))
 		{
 			clearColor[0] = 0.9f;
 		}*/
@@ -860,22 +940,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma endregion 
 #pragma region グラフィックスコマンド
 
-		
-		// 5-3 kaitenn
-		//if (DirectXInput::IsKeyDown(DIK_D) || DirectXInput::IsKeyDown(DIK_A))
-		//{
-		//	if (DirectXInput::IsKeyDown(DIK_D)) { angle += XMConvertToRadians(10.0f); }
-		//	else if (DirectXInput::IsKeyDown(DIK_A)) { angle -= XMConvertToRadians(10.0f); }
-
-		//	// angleラジアンだけY軸周りに回転。 半径は -100
-		//	eye.x = -100 * sinf(angle);
-		//	eye.z = -100 * cosf(angle);
-
-		//	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-		//}
-
-		// 定数バッファに転送
-		constMapTransform->mat = matView * matProjection;	// 行列の合成
 
 		// 4.描画コマンドここから
 
