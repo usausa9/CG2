@@ -543,6 +543,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{{-5.0f, 5.0f, 5.0f }, {}, {1.0f, 1.0f}},	// 右下
 	};
 
+	// インデックスデータ
+	unsigned short indices[] =
+	{
+		// 前
+		0,1,2,	// 三角形1つ目
+		2,1,3,	// 三角形2つ目
+
+		// 後
+		4,5,6,	// 三角形3つ目
+		6,5,7,	// 三角形4つ目
+
+		// 左
+		8,9,10,	// 三角形5つ目
+		10,9,11,	// 三角形6つ目
+
+		// 右
+		12,13,14,	// 三角形7つ目
+		14,13,15,	// 三角形8つ目
+
+		// 下
+		16,17,18,	// 三角形9つ目
+		18,17,19,	// 三角形10つ目
+
+		// 上
+		20,21,22,	// 三角形11つ目
+		22,21,23,	// 三角形12つ目
+
+	};
+
 	// 5-4
 	float angle = 0.0f; // カメラの回転角
 
@@ -562,6 +591,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	resDesc.MipLevels = 1;
 	resDesc.SampleDesc.Count = 1;
 	resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	// 法線の計算
+	for (int i = 0; i < _countof(indices) / 3; i++) {
+		// 三角形1つごとに計算していく
+		// 三角形のインデックスを取り出して、一時的な変数に入れる
+		unsigned short index0 = indices[i * 3 + 0];
+		unsigned short index1 = indices[i * 3 + 1];
+		unsigned short index2 = indices[i * 3 + 2];
+
+		// 三角形を構成する頂点座標をベクトルに代入
+		XMVECTOR p0 = XMLoadFloat3(&vertices[index0].pos);
+		XMVECTOR p1 = XMLoadFloat3(&vertices[index1].pos);
+		XMVECTOR p2 = XMLoadFloat3(&vertices[index2].pos);
+
+		// p0→p1ベクトル、p0→p2ベクトルを計算（ベクトルの減算）
+		XMVECTOR v1 = XMVectorSubtract(p1, p0);
+		XMVECTOR v2 = XMVectorSubtract(p2, p0);
+
+		// 外積は両方から垂直なベクトル
+		XMVECTOR normal = XMVector3Cross(v1, v2);
+
+		// 正規化（長さを1にする）
+		normal = XMVector3Normalize(normal);
+
+		// 求めた法線を頂点データに代入
+		XMStoreFloat3(&vertices[index0].normal, normal);
+		XMStoreFloat3(&vertices[index1].normal, normal);
+		XMStoreFloat3(&vertices[index2].normal, normal);
+	}
 
 	// 頂点バッファの生成
 	ID3D12Resource* vertBuff = nullptr;
@@ -603,34 +661,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma endregion
 
 #pragma region インデックスバッファ
-	// インデックスデータ
-	unsigned short indices[] =
-	{
-		// 前
-		0,1,2,	// 三角形1つ目
-		2,1,3,	// 三角形2つ目
-
-		// 後
-		4,5,6,	// 三角形3つ目
-		6,5,7,	// 三角形4つ目
-
-		// 左
-		8,9,10,	// 三角形5つ目
-		10,9,11,	// 三角形6つ目
-
-		// 右
-		12,13,14,	// 三角形7つ目
-		14,13,15,	// 三角形8つ目
-
-		// 下
-		16,17,18,	// 三角形9つ目
-		18,17,19,	// 三角形10つ目
-
-		// 上
-		20,21,22,	// 三角形11つ目
-		22,21,23,	// 三角形12つ目
-
-	};
 
 	// インデックスデータ全体のサイズ
 	UINT sizeIB = static_cast<UINT>(sizeof(uint16_t) * _countof(indices));
