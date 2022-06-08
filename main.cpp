@@ -285,7 +285,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 	// 値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f); // RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(0.5f, 0.5f, 0.5f, 0.5f); // RGBAで半透明の赤
 
 	// ルートパラメータの設定
 	D3D12_ROOT_PARAMETER rootParam = {};
@@ -298,12 +298,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// 頂点データ
 	XMFLOAT3 vertices[] =
 	{
-	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ +0.5f, -0.5f, 0.0f }, // 右下
-	{ -0.5f, +0.0f, 0.0f }, // 左中
-	{ +0.5f, -0.0f, 0.0f }, // 右中
-	{ -0.5f, +0.5f, 0.0f }, // 左上
-	{ +0.5f, +0.5f, 0.0f }, // 右上
+		{ -0.5f, -0.5f, 0.0f }, // 左下
+		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, -0.5f, 0.0f }, // 右下
+		{ -0.5f, +0.5f, 0.0f }, // 左上
+		{ +0.5f, +0.5f, 0.0f }, // 右上
+		{ +0.5f, -0.5f, 0.0f }, // 右下
 	};
 
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
@@ -590,6 +590,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 		DirectXInput::InputUpdate(); // ★Inputクラス :: アップデート
 
+		if (DirectXInput::IsKeyDown(DIK_2))
+		{
+			pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME; // ポリゴン内を塗りつぶさない場合はこっち(ワイヤーフレーム)
+		}
+		else
+		{
+			pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
+		}
+
+		result = device->CreateGraphicsPipelineState(&pipelineDesc, IID_PPV_ARGS(&pipelineState));
+		assert(SUCCEEDED(result));
 		// バックバッファの番号を取得(2つなので0番か1番)
 		UINT bbIndex = swapChain->GetCurrentBackBufferIndex();
 
@@ -609,10 +620,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		// 3.画面クリア R G B A
 		FLOAT clearColor[] = { 0.1f, 0.25f, 0.5f, 0.0f }; // 青っぽい色
 
-		/*if (DirectXInput::IsKeyDown(DIK_7))
+		if (DirectXInput::IsKeyDown(DIK_SPACE))
 		{
 			clearColor[0] = 0.9f;
-		}*/
+		}
 
 		commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
@@ -620,25 +631,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 #pragma region グラフィックスコマンド
 		// 4.描画コマンドここから
 
-		// ビューポート設定コマンド
-		D3D12_VIEWPORT viewport{};
-		viewport.Width = window_width;
-		viewport.Height = window_height;
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-
-		// ビューポート設定コマンドを、コマンドリストに積む
-		commandList->RSSetViewports(1, &viewport);
+		int isTriangle = 0;
 
 		// シザー矩形
 		D3D12_RECT scissorRect{};
-		scissorRect.left = 0; // 切り抜き座標左
-		scissorRect.right = scissorRect.left + window_width; // 切り抜き座標右
-		scissorRect.top = 0; // 切り抜き座標上
-		scissorRect.bottom = scissorRect.top + window_height; // 切り抜き座標下
-
+		scissorRect.left = 0;									// 切り抜き座標左
+		scissorRect.right = scissorRect.left + window_width;	// 切り抜き座標右
+		scissorRect.top = 0;									// 切り抜き座標上
+		scissorRect.bottom = scissorRect.top + window_height;	// 切り抜き座標下
 		// シザー矩形設定コマンドを、コマンドリストに積む
 		commandList->RSSetScissorRects(1, &scissorRect);
 
@@ -646,24 +646,83 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		commandList->SetPipelineState(pipelineState);
 		commandList->SetGraphicsRootSignature(rootSignature);
 
-		// プリミティブ形状の設定コマンド
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);	 // 点のリスト
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);		 // 線のリスト
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);	 // 線のストリップ
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	 // 三角形のリスト
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP); // 三角形のストリップ
+		// 三角形 / 四角形 変更
+		if (DirectXInput::IsKeyDown(DIK_1))
+		{
+			if (isTriangle == 0)
+			{
+				isTriangle = 1;
+			}
+			else if (isTriangle == 1)
+			{
+				isTriangle = 0;
+			}
+		}
 
 		// 頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 
-		// 定数バッファビューの設定コマンド
-		commandList->SetGraphicsRootConstantBufferView(0, constBuffMaterial->GetGPUVirtualAddress());
+		// 1つ目
+		// ビューポート設定コマンド
+		D3D12_VIEWPORT viewport{};
+		viewport.Width = window_width - window_width / 3;
+		viewport.Height = window_height - window_height / 3;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;	//最小震度
+		viewport.MaxDepth = 1.0f;	//最大深度
 
-		// インデックスバッファビューの設定コマンド
-		commandList->IASetIndexBuffer(&ibView);
+		// ビューポート設定コマンドを、コマンドリストに積む
+		commandList->RSSetViewports(1, &viewport);
 
 		// 描画コマンド
-		commandList->DrawIndexedInstanced(_countof(vertices), 1, 0, 0 ,0); // 全ての頂点を使って描画
+		if (isTriangle == 0)commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
+		if (isTriangle == 1)commandList->DrawInstanced(3, 1, 0, 0); // 全ての頂点を使って描画
+
+		// 2つ目
+		// ビューポート設定コマンド
+		viewport.Width = window_width - window_width / 3;
+		viewport.Height = window_height / 3;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = window_height - window_height / 3;
+		viewport.MinDepth = 0.0f;	//最小震度
+		viewport.MaxDepth = 1.0f;	//最大深度
+		// ビューポート設定コマンドを、コマンドリストに積む
+		commandList->RSSetViewports(1, &viewport);
+
+		// 描画コマンド
+		if (isTriangle == 0)commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
+		if (isTriangle == 1)commandList->DrawInstanced(3, 1, 0, 0); // 全ての頂点を使って描画
+
+		// 3つ目
+		// ビューポート設定コマンド
+		viewport.Width = window_width / 3;
+		viewport.Height = window_height - window_height / 3;
+		viewport.TopLeftX = window_width - window_width / 3;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;	//最小震度
+		viewport.MaxDepth = 1.0f;	//最大深度
+		// ビューポート設定コマンドを、コマンドリストに積む
+		commandList->RSSetViewports(1, &viewport);
+
+		// 描画コマンド
+		if (isTriangle == 0)commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
+		if (isTriangle == 1)commandList->DrawInstanced(3, 1, 0, 0); // 全ての頂点を使って描画
+
+		// 4つ目
+		// ビューポート設定コマンド
+		viewport.Width = window_width / 3;
+		viewport.Height = window_height / 3;
+		viewport.TopLeftX = window_width - window_width / 3;
+		viewport.TopLeftY = window_height - window_height / 3;
+		viewport.MinDepth = 0.0f;	//最小震度
+		viewport.MaxDepth = 1.0f;	//最大深度
+		// ビューポート設定コマンドを、コマンドリストに積む
+		commandList->RSSetViewports(1, &viewport);
+
+		// 描画コマンド
+		if (isTriangle == 0)commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
+		if (isTriangle == 1)commandList->DrawInstanced(3, 1, 0, 0); // 全ての頂点を使って描画
 
 		// 4.描画コマンドここまで
 
