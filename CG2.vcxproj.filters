@@ -42,6 +42,9 @@
     <ClCompile Include="Matrix4.cpp">
       <Filter>ソース ファイル\.cpp\math.cpp</Filter>
     </ClCompile>
+    <ClCompile Include="WinAPI.cpp">
+      <Filter>ソース ファイル\.cpp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicPS.hlsl">
@@ -63,6 +66,9 @@
     </ClInclude>
     <ClInclude Include="Matrix4.h">
       <Filter>ソース ファイル\.h\math.h</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAPI.h">
+      <Filter>ソース ファイル\.h</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
