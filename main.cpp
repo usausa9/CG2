@@ -82,9 +82,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 #ifdef _DEBUG
 // デバッグレイヤーをオンに
-	ID3D12Debug* debugController;
+	ID3D12Debug1* debugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
 		debugController->EnableDebugLayer();
+		debugController->SetEnableGPUBasedValidation(TRUE);
 	}
 #endif
 
@@ -346,16 +347,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3ds[i].parent = &object3ds[ i - 1 ];
 
 			// 親オブジェクトの9割の大きさ
-			object3ds[i].scale = { 0.9f,0.9f,0.9f };
+			object3ds[i].scale = { 100.0f, 100.0f, 0.5f };
 
 			// 親オブジェクトに対してZ軸周りに30度回転
-			object3ds[i].rotation = { 0.0f,0.0f,XMConvertToRadians(30.0f) };
+			object3ds[i].rotation = { 0.0f,0.0f,0.0f };
 
 			// 親オブジェクトに対してZ方向に-8.0fずらす
-			object3ds[i].position = { 0.0f,0.0f,-8.0f };
+			object3ds[i].position = { (float)window.width / 2 , (float)window.height / 2, 0.5f };
 		}
 	}
-
 	
 	{
 		// ヒープ設定
@@ -382,13 +382,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 	/*constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);*/
 
-	// 透視投影変換行列の計算
-	XMMATRIX matProjection =
-	XMMatrixPerspectiveFovLH(
-		XMConvertToRadians(45.0f),	// 上下画角45度
-		(float)window.width / window.height,
-		0.1f, 1000.0f
+	// 透視投影変換行列の計算 // 2D用の射影変換
+	XMMATRIX matProjection = XMMatrixOrthographicOffCenterLH(
+		0, window.width,
+		window.height, 0,
+		0.0f, 1.0f
 	);
+		
+	// 3D用の射影変換
+	//XMMatrixPerspectiveFovLH(
+	//	XMConvertToRadians(45.0f),	// 上下画角45度
+	//	(float)window.width / window.height,
+	//	0.1f, 1000.0f
+	//);
 
 	// ビュー変換行列
 	XMMATRIX matView;
@@ -1295,7 +1301,7 @@ void UpdateObject3d(Object3d* object, XMMATRIX& matView, XMMATRIX& matProjection
 	}
 
 	// 定数バッファへデータ転送
-	object->constMapTransform->mat = object->matWorld * matView * matProjection;
+	object->constMapTransform->mat = object->matWorld /** matView*/ * matProjection;
 }
 
 void DrawObject3D(Object3d* object, ID3D12GraphicsCommandList* commandList, D3D12_VERTEX_BUFFER_VIEW& vbView, D3D12_INDEX_BUFFER_VIEW& ibView, UINT numIndices)

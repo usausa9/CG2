@@ -108,3 +108,13 @@ const Vector3 operator/(const Vector3& v, float s)
 	Vector3 temp(v);
 	return temp /= s;
 }
+
+float Degree2Radian(float degree)
+{
+	return degree * PI / 180;
+}
+
+float Radian2Degree(float radian)
+{
+	return radian * 180 / PI;
+}

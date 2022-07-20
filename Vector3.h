@@ -1,4 +1,7 @@
 #pragma once
+#include <DirectXMath.h>
+
+const float PI = 3.141592654f;
 
 class Vector3
 {
@@ -37,3 +40,9 @@ const Vector3 operator-(const Vector3& v1, const Vector3& v2);
 const Vector3 operator*(const Vector3& v, float s);
 const Vector3 operator*(float s, const Vector3& v);
 const Vector3 operator/(const Vector3& v, float s);
+
+// 度数法→ラジアン 変換
+float Degree2Radian(float degree);
+
+// ラジアン→度数法 変換
+float Radian2Degree(float radian);
