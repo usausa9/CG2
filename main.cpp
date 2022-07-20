@@ -329,7 +329,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//ConstBufferDataTransform* constMapTransform1 = nullptr;
 
 	// 3Dオブジェクトの数
-	const size_t kObjectCount = 50;
+	const size_t kObjectCount = 1;
 
 	// 3Dオブジェクトの配列
 	Object3d object3ds[kObjectCount];
@@ -347,13 +347,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			object3ds[i].parent = &object3ds[ i - 1 ];
 
 			// 親オブジェクトの9割の大きさ
-			object3ds[i].scale = { 100.0f, 100.0f, 0.5f };
+			object3ds[i].scale = { 0.9f,0.9f,0.9f };
 
 			// 親オブジェクトに対してZ軸周りに30度回転
-			object3ds[i].rotation = { 0.0f,0.0f,0.0f };
+			object3ds[i].rotation = { 0.0f,0.0f,XMConvertToRadians(30.0f) };
 
 			// 親オブジェクトに対してZ方向に-8.0fずらす
-			object3ds[i].position = { (float)window.width / 2 , (float)window.height / 2, 0.5f };
+			object3ds[i].position = { 0.0f,0.0f,-8.0f };
 		}
 	}
 	
@@ -382,19 +382,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
 	/*constMapTransform->mat = XMMatrixOrthographicOffCenterLH(0.0f, window_width, window_height, 0.0f, 0.0f, 1.0f);*/
 
-	// 透視投影変換行列の計算 // 2D用の射影変換
-	XMMATRIX matProjection = XMMatrixOrthographicOffCenterLH(
-		0, window.width,
-		window.height, 0,
-		0.0f, 1.0f
+	// 透視投影変換行列の計算
+	XMMATRIX matProjection =
+	XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(45.0f),	// 上下画角45度
+		(float)window.width / window.height,
+		0.1f, 1000.0f
 	);
-		
-	// 3D用の射影変換
-	//XMMatrixPerspectiveFovLH(
-	//	XMConvertToRadians(45.0f),	// 上下画角45度
-	//	(float)window.width / window.height,
-	//	0.1f, 1000.0f
-	//);
 
 	// ビュー変換行列
 	XMMATRIX matView;
@@ -411,7 +405,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	descriptorRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	// 値を書き込むと自動的に転送される
-	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f); // RGBAで半透明の赤
+	constMapMaterial->color = XMFLOAT4(1, 1, 1, 1.0f); // RGBAで不透明の白
 
 	// ルートパラメータの設定
 	D3D12_ROOT_PARAMETER rootParams[3] = {};
@@ -1034,6 +1028,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(result));
 
 #pragma endregion
+	float textureR = 0.0f;
+	float textureG = 0.0f;
 
 	// ゲームループ
 	while (true)
@@ -1068,6 +1064,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			else if (_key.IsKeyDown(DIK_LEFT)) { object3ds[0].position.x -= 1.0f; }
 		}
 
+
+
 #pragma region ビュー行列の計算
 	if (_key.IsKeyDown(DIK_D) || _key.IsKeyDown(DIK_A))
 	{
@@ -1093,6 +1091,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 	}
 #pragma endregion 
+
+	{
+
+		textureR += 0.1f;
+		textureG += 0.1f;
+
+		if (textureR >= 1.0f || textureG >= 1.0f)
+		{
+			textureR = 0.0f;
+			textureG = 0.0f;
+		}
+		// 値を書き込むと自動的に転送される
+		constMapMaterial->color = XMFLOAT4(textureR, textureG, 0.0f, 1.0f); // RGBAで不透明の白
+	}
 
 		// 3Dオブジェクト更新処理
 		for (size_t i = 0; i < _countof(object3ds); i++)
@@ -1301,7 +1313,7 @@ void UpdateObject3d(Object3d* object, XMMATRIX& matView, XMMATRIX& matProjection
 	}
 
 	// 定数バッファへデータ転送
-	object->constMapTransform->mat = object->matWorld /** matView*/ * matProjection;
+	object->constMapTransform->mat = object->matWorld * matView * matProjection;
 }
 
 void DrawObject3D(Object3d* object, ID3D12GraphicsCommandList* commandList, D3D12_VERTEX_BUFFER_VIEW& vbView, D3D12_INDEX_BUFFER_VIEW& ibView, UINT numIndices)
